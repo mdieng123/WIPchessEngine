@@ -1,0 +1,253 @@
+% Represent the chess board as a 8x8 array, with 1 representing a white piece
+% and -1 representing a black piece. 0 represents an empty square.
+board = [1 1 1 1 1 1 1 1;
+         0 0 0 0 0 0 0 0;
+         0 0 0 0 0 0 0 0;
+         0 0 0 0 0 0 0 0;
+         0 0 0 0 0 0 0 0;
+         0 0 0 0 0 0 0 0;
+        -1 -1 -1 -1 -1 -1 -1 -1;
+        -1 -1 -1 -1 -1 -1 -1 -1];
+
+% Create a struct to represent each piece, with fields for its type, color,
+% and position.
+piece = struct('type', {}, 'color', {}, 'pos', {});
+
+% Initialize the chess pieces.
+for i = 1:8
+    piece(i) = struct('type', 'pawn', 'color', 1, 'pos', [2, i]);
+    piece(i+8) = struct('type', 'pawn', 'color', -1, 'pos', [7, i]);
+end
+piece(17) = struct('type', 'rook', 'color', 1, 'pos', [1, 1]);
+piece(18) = struct('type', 'knight', 'color', 1, 'pos', [1, 2]);
+piece(19) = struct('type', 'bishop', 'color', 1, 'pos', [1, 3]);
+piece(20) = struct('type', 'queen', 'color', 1, 'pos', [1, 4]);
+piece(21) = struct('type', 'king', 'color', 1, 'pos', [1, 5]);
+piece(22) = struct('type', 'bishop', 'color', 1, 'pos', [1, 6]);
+piece(23) = struct('type', 'knight', 'color', 1, 'pos', [1, 7]);
+piece(24) = struct('type', 'rook', 'color', 1, 'pos', [1, 8]);
+piece(25) = struct('type', 'rook', 'color', -1, 'pos', [8, 1]);
+piece(26) = struct('type', 'knight', 'color', -1, 'pos', [8, 2]);
+piece(27) = struct('type', 'bishop', 'color', -1, 'pos', [8, 3]);
+piece(28) = struct('type', 'queen', 'color', -1, 'pos', [8, 4]);
+piece(29) = struct('type', 'king', 'color', -1, 'pos', [8, 5]);
+piece(30) = struct('type', 'bishop', 'color', -1, 'pos', [8, 6]);
+piece(31) = struct('type', 'knight', 'color', -1, 'pos', [8, 7]);
+piece
+
+% Define a function to move a piece.
+function movePiece(piece, newPos)
+    piece.pos = newPos;
+end
+
+% Define a function to check if a move is legal.
+function isLegal = checkMove(board, piece, newPos)
+    % Check if the new position is off the board.
+    if any(newPos < 1) || any(newPos > 8)
+        isLegal = false;
+        return;
+    end
+    
+    % Check if the new position is occupied by a piece of the same color.
+    if board(newPos(1), newPos(2)) == piece.color
+        isLegal = false;
+        return;
+    end
+    
+    % Check if the piece is a pawn.
+    if strcmp(piece.type, 'pawn')
+        % Pawns can only move forward.
+        if piece.color == 1 && newPos(1) <= piece.pos(1)
+            isLegal = false;
+            return;
+        elseif piece.color == -1 && newPos(1) >= piece.pos(1)
+            isLegal = false;
+            return;
+        end
+        
+        % Pawns can only move one square forward, unless they are in their
+        % starting position.
+        if abs(newPos(1) - piece.pos(1)) > 2 || ...
+           (abs(newPos(1) - piece.pos(1)) == 2 && piece.pos(1) ~= 2 && piece.pos(1) ~= 7)
+            isLegal = false;
+            return;
+        end
+        
+        % Pawns can only capture pieces diagonally.
+        if abs(newPos(2) - piece.pos(2)) == 1 && board(newPos(1), newPos(2)) == 0
+            isLegal = false;
+            return;
+        end
+    end
+    
+    % Check if the piece is a rook.
+    if strcmp(piece.type, 'rook')
+        % Rooks can only move horizontally or vertically.
+        if piece.pos(1) ~= newPos(1) && piece.pos(2) ~= newPos(2)
+            isLegal = false;
+            return;
+        end
+        
+        % Check if there are any pieces blocking the path.
+        if piece.pos(1) == newPos(1)
+            minCol = min(piece.pos(2), newPos(2));
+            maxCol = max(piece.pos(2), newPos(2));
+            for i = minCol+1:maxCol-1
+                if board(piece.pos(1), i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif piece.pos(2) == newPos(2)
+            minRow = min(piece.pos(1), newPos(1));
+            maxRow = max(piece.pos(1), newPos(1));
+            for i = minRow+1:maxRow-1
+                if board(i, piece.pos(2)) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        end
+    end
+    
+    % Check if the piece is a knight
+    % Check if the piece is a knight.
+    if strcmp(piece.type, 'knight')
+        % Knights can move in an L-shape.
+        if abs(newPos(1) - piece.pos(1)) == 2 && abs(newPos(2) - piece.pos(2)) == 1
+            isLegal = true;
+            return;
+        elseif abs(newPos(1) - piece.pos(1)) == 1 && abs(newPos(2) - piece.pos(2)) == 2
+            isLegal = true;
+            return;
+        else
+            isLegal = false;
+            return;
+        end
+    end
+    
+    % Check if the piece is a bishop.
+    if strcmp(piece.type, 'bishop')
+        % Bishops can only move diagonally.
+        if abs(newPos(1) - piece.pos(1)) ~= abs(newPos(2) - piece.pos(2))
+            isLegal = false;
+            return;
+        end
+        
+        % Check if there are any pieces blocking the path.
+        if newPos(1) > piece.pos(1) && newPos(2) > piece.pos(2)
+            for i = 1:newPos(1)-piece.pos(1)-1
+                if board(piece.pos(1)+i, piece.pos(2)+i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) > piece.pos(1) && newPos(2) < piece.pos(2)
+            for i = 1:newPos(1)-piece.pos(1)-1
+                if board(piece.pos(1)+i, piece.pos(2)-i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) < piece.pos(1) && newPos(2) > piece.pos(2)
+            for i = 1:piece.pos(1)-newPos(1)-1
+                if board(piece.pos(1)-i, piece.pos(2)+i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) < piece.pos(1) && newPos(2) < piece.pos(2)
+            for i = 1:piece.pos(1)-newPos(1)-1
+                if board(piece.pos(1)-i, piece.pos(2)-i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        end
+    end
+    
+    % Check if the piece is a queen.
+    if strcmp(piece.type, 'queen')
+        % Queens can move horizontally, vertically, or diagonally.
+        if piece.pos(1) ~= newPos(1) && piece.pos(2) ~= newPos(2) && ...
+           abs(newPos(1) - piece.pos(1)) ~= abs(newPos(2) - piece.pos(2))
+            isLegal = false;
+            return;
+        end
+        
+        % Check if there are any pieces blocking the path.
+        % Check if there are any pieces blocking the path.
+        if piece.pos(1) == newPos(1)
+            minCol = min(piece.pos(2), newPos(2));
+            maxCol = max(piece.pos(2), newPos(2));
+            for i = minCol+1:maxCol-1
+                if board(piece.pos(1), i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif piece.pos(2) == newPos(2)
+            minRow = min(piece.pos(1), newPos(1));
+            maxRow = max(piece.pos(1), newPos(1));
+            for i = minRow+1:maxRow-1
+                if board(i, piece.pos(2)) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) > piece.pos(1) && newPos(2) > piece.pos(2)
+            for i = 1:newPos(1)-piece.pos(1)-1
+                if board(piece.pos(1)+i, piece.pos(2)+i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) > piece.pos(1) && newPos(2) < piece.pos(2)
+            for i = 1:newPos(1)-piece.pos(1)-1
+                if board(piece.pos(1)+i, piece.pos(2)-i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) < piece.pos(1) && newPos(2) > piece.pos(2)
+            for i = 1:piece.pos(1)-newPos(1)-1
+                if board(piece.pos(1)-i, piece.pos(2)+i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        elseif newPos(1) < piece.pos(1) && newPos(2) < piece.pos(2)
+            for i = 1:piece.pos(1)-newPos(1)-1
+                if board(piece.pos(1)-i, piece.pos(2)-i) ~= 0
+                    isLegal = false;
+                    return;
+                end
+            end
+        end
+    end
+    
+    % Check if the piece is a king.
+    if strcmp(piece.type, 'king')
+        % Kings can only move one square in any direction.
+        if any(abs(newPos - piece.pos) > 1)
+            isLegal = false;
+            return;
+        end
+    end
+    
+    % If all checks pass, the move is legal.
+    isLegal = true;
+end
+
+% Define a function to evaluate the relative strength of a position.
+function score = evaluatePosition(board, color)
+    score = 0;
+    
+    % Assign point values to each piece.
+    pawnVal = 1;
+    knightVal = 3;
+    bishopVal = 3;
+    rookVal = 5;
+    queenVal = 9
+
+
